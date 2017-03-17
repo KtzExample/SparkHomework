@@ -47,9 +47,9 @@ object WikipediaRanking {
       filter(article => langs.foldLeft(false)((preResult, lang) => preResult || article.text.split(" ").contains(lang))).
       flatMap(article => {
           val articleSplit = article.text.split(" ")
-          langs.foldLeft(List[(String, Iterable[WikipediaArticle])]())((preResult, lang) => if(articleSplit.contains(lang)) preResult ++ List((lang, List(article))) else preResult)
+          langs.foldLeft(List[(String, WikipediaArticle)]())((preResult, lang) => if(articleSplit.contains(lang)) preResult ++ List((lang, article)) else preResult)
         }
-      ).reduceByKey(_ ++ _)
+      ).groupByKey()
 
   /* (2) Compute the language ranking again, but now using the inverted index. Can you notice
    *     a performance improvement?
@@ -57,7 +57,8 @@ object WikipediaRanking {
    *   Note: this operation is long-running. It can potentially run for
    *   several seconds.
    */
-  def rankLangsUsingIndex(index: RDD[(String, Iterable[WikipediaArticle])]): List[(String, Int)] = ???
+  def rankLangsUsingIndex(index: RDD[(String, Iterable[WikipediaArticle])]): List[(String, Int)] =
+    index.map(langPair => (langPair._1, langPair._2.size)).sortBy(_._2, false).collect().toList
 
   /* (3) Use `reduceByKey` so that the computation of the index and the ranking are combined.
    *     Can you notice an improvement in performance compared to measuring *both* the computation of the index
@@ -66,7 +67,11 @@ object WikipediaRanking {
    *   Note: this operation is long-running. It can potentially run for
    *   several seconds.
    */
-  def rankLangsReduceByKey(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] = ???
+  def rankLangsReduceByKey(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] =
+    rdd.flatMap(article => {
+      val articleSplite = article.text.split(" ")
+      langs.filter(articleSplite.contains).foldLeft(List[(String, Int)]())((result, lang) => result ++ List((lang, articleSplite.count(_ == lang))))
+    }).reduceByKey(_ + _).sortBy(_._2, false).collect().toList
 
   def main(args: Array[String]) {
 
