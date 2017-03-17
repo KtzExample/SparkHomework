@@ -70,7 +70,7 @@ object WikipediaRanking {
   def rankLangsReduceByKey(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] =
     rdd.flatMap(article => {
       val articleSplite = article.text.split(" ")
-      langs.filter(articleSplite.contains).foldLeft(List[(String, Int)]())((result, lang) => result ++ List((lang, articleSplite.count(_ == lang))))
+      langs.filter(articleSplite.contains).map((_, 1))
     }).reduceByKey(_ + _).sortBy(_._2, false).collect().toList
 
   def main(args: Array[String]) {
