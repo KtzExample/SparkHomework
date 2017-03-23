@@ -19,6 +19,10 @@ object StackOverflow extends StackOverflow {
   def main(args: Array[String]): Unit = {
 
     val lines   = sc.textFile("src/main/resources/stackoverflow/stackoverflow.csv")
+//    val linesArr = lines.collect()
+//
+//    sc.parallelize(linesArr.slice(0, linesArr.length / 4)).saveAsTextFile("example.csv")
+
     val raw     = rawPostings(lines)
     val grouped = groupedPostings(raw)
     val scored  = scoredPostings(grouped)
@@ -76,9 +80,9 @@ class StackOverflow extends Serializable {
 
   /** Group the questions and answers together */
   def groupedPostings(postings: RDD[Posting]): RDD[(Int, Iterable[(Posting, Posting)])] = {
-    val quastionPostings = postings.filter(_.postingType == 1)
-    quastionPostings.
-      map(questionPosting => (questionPosting.id, postings.filter(_.parentId == questionPosting.id).map(answer => (questionPosting, answer)).collect()))
+    val questionPostings = postings.filter(_.postingType == 1).map(posting => (posting.id, posting))
+    val answerPostings = postings.filter(_.postingType == 2).map(posting => (posting.parentId.get, posting))
+    questionPostings.join(answerPostings).groupByKey()
   }
 
 

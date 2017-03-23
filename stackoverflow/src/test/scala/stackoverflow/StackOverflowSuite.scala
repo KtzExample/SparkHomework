@@ -1,6 +1,6 @@
 package stackoverflow
 
-import org.scalatest.{FunSuite, BeforeAndAfterAll}
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.apache.spark.SparkConf
@@ -8,6 +8,8 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import java.io.File
+
+import stackoverflow.StackOverflow._
 
 @RunWith(classOf[JUnitRunner])
 class StackOverflowSuite extends FunSuite with BeforeAndAfterAll {
@@ -34,5 +36,15 @@ class StackOverflowSuite extends FunSuite with BeforeAndAfterAll {
     assert(instantiatable, "Can't instantiate a StackOverflow object")
   }
 
+  val conf: SparkConf = new SparkConf().setMaster("local").setAppName("StackOverflow")
+  val sc: SparkContext = new SparkContext(conf)
 
+  val lines: RDD[String] = sc.textFile("../../src/main/resources/stackoverflow/example.csv")
+  val raw: RDD[Posting] = rawPostings(lines)
+
+  test("get group well") {
+    val groupedPosting = groupedPostings(raw).collect()
+
+    assert(groupedPosting.length > 0)
+  }
 }
