@@ -26,6 +26,9 @@ object StackOverflow extends StackOverflow {
     val raw     = rawPostings(lines)
     val grouped = groupedPostings(raw)
     val scored  = scoredPostings(grouped)
+
+//    println(scored.collect().length)
+
     val vectors = vectorPostings(scored)
 //    assert(vectors.count() == 2121822, "Incorrect number of vectors: " + vectors.count())
 
@@ -101,7 +104,10 @@ class StackOverflow extends Serializable {
       highScore
     }
 
-    ???
+    grouped.map{
+      case (qid, qNaPairs) =>
+        (qNaPairs.head._1, answerHighScore(qNaPairs.map(_._2).toArray))
+    }
   }
 
 
@@ -121,7 +127,9 @@ class StackOverflow extends Serializable {
       }
     }
 
-    ???
+    scored.filter(pair => pair._1.tags.isDefined && langs.contains(pair._1.tags.get)).map{
+      case (posting, score) => (firstLangInTag(posting.tags, langs).get, score)
+    }
   }
 
 
