@@ -4,6 +4,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 
 import scala.annotation.tailrec
+import scala.collection.mutable.ListBuffer
 
 /** A raw stackoverflow posting, either a question or an answer */
 case class Posting(postingType: Int, id: Int, acceptedAnswer: Option[Int], parentId: Option[Int], score: Int, tags: Option[String]) extends Serializable
@@ -177,14 +178,24 @@ class StackOverflow extends Serializable {
 
 
   //
-  //
+  // means: 45x2
+  // vectors : 2121822x2
   //  Kmeans method:
   //
   //
 
   /** Main kmeans computation */
   @tailrec final def kmeans(means: Array[(Int, Int)], vectors: RDD[(Int, Int)], iter: Int = 1, debug: Boolean = false): Array[(Int, Int)] = {
+
     val newMeans = means.clone() // you need to compute newMeans
+
+    vectors
+      .map(point => (findClosest(point, newMeans), point)).cache()
+      .groupByKey().cache().map {
+      case (cluster, points) => (cluster, averageVectors(points))
+    }.collect().foreach {
+      case (cluster, point) => newMeans.update(cluster, point)
+    }
 
     // TODO: Fill in the newMeans array
     val distance = euclideanDistance(means, newMeans)
