@@ -190,9 +190,9 @@ class StackOverflow extends Serializable {
     val newMeans = means.clone() // you need to compute newMeans
 
     vectors
-      .map(point => (findClosest(point, newMeans), point)).cache()
-      .groupByKey().cache().map {
-      case (cluster, points) => (cluster, averageVectors(points))
+      .map(point => (findClosest(point, newMeans), point))
+      .groupByKey().mapValues {points =>
+      averageVectors(points)
     }.collect().foreach {
       case (cluster, point) => newMeans.update(cluster, point)
     }
