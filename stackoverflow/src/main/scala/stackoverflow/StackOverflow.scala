@@ -4,7 +4,6 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 
 import scala.annotation.tailrec
-import scala.collection.mutable.ListBuffer
 
 /** A raw stackoverflow posting, either a question or an answer */
 case class Posting(postingType: Int, id: Int, acceptedAnswer: Option[Int], parentId: Option[Int], score: Int, tags: Option[String]) extends Serializable
@@ -296,9 +295,9 @@ class StackOverflow extends Serializable {
     val closestGrouped = closest.groupByKey()
 
     val median = closestGrouped.mapValues { vs =>
-      val langLabel: String   = ??? // most common language in the cluster
+      val langLabel: String   = langs(vs.groupBy(_._1).maxBy(_._2.size)._1) // most common language in the cluster
       val langPercent: Double = ??? // percent of the questions in the most common language
-      val clusterSize: Int    = ???
+      val clusterSize: Int    = vs.size
       val medianScore: Int    = ???
 
       (langLabel, langPercent, clusterSize, medianScore)
