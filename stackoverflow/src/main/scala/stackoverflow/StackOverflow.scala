@@ -129,8 +129,8 @@ class StackOverflow extends Serializable {
     }
 
     scored.filter(pair => pair._1.tags.isDefined && langs.contains(pair._1.tags.get)).map{
-      case (posting, score) => (firstLangInTag(posting.tags, langs).get, score)
-    }
+      case (posting, score) => (firstLangInTag(posting.tags, langs).get * langSpread, score)
+    }.cache()
   }
 
 
