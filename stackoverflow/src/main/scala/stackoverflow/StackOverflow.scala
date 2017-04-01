@@ -19,6 +19,7 @@ object StackOverflow extends StackOverflow {
   def main(args: Array[String]): Unit = {
 
     val lines   = sc.textFile("src/main/resources/stackoverflow/stackoverflow.csv")
+//    val lines   = sc.textFile("src/main/resources/stackoverflow/example.csv")
 //    val linesArr = lines.collect()
 //
 //    sc.parallelize(linesArr.slice(0, linesArr.length / 4)).saveAsTextFile("example.csv")
@@ -291,14 +292,16 @@ class StackOverflow extends Serializable {
   //
   //
   def clusterResults(means: Array[(Int, Int)], vectors: RDD[(Int, Int)]): Array[(String, Double, Int, Int)] = {
-    val closest = vectors.map(p => (findClosest(p, means), p))
-    val closestGrouped = closest.groupByKey()
+    val closest: RDD[(Int, (Int, Int))] = vectors.map(p => (findClosest(p, means), p))
+    val closestGrouped: RDD[(Int, Iterable[(Int, Int)])] = closest.groupByKey()
 
     val median = closestGrouped.mapValues { vs =>
-      val langLabel: String   = langs(vs.groupBy(_._1).maxBy(_._2.size)._1) // most common language in the cluster
-      val langPercent: Double = ??? // percent of the questions in the most common language
+      val langLabel: String   = langs(vs.groupBy(_._1).maxBy(_._2.size)._1 / langSpread) // most common language in the cluster
+      val langPercent: Double = vs.count(_._1 == (langs.indexOf(langLabel) * langSpread)) / vs.size * 100 // percent of the questions in the most common language
       val clusterSize: Int    = vs.size
-      val medianScore: Int    = ???
+      val sortedScores = vs.map(_._2).toList.sorted
+      val middle = clusterSize / 2
+      val medianScore: Int    = if(clusterSize % 2 == 0) (sortedScores(middle-1) + sortedScores(middle)) / 2 else sortedScores(middle)
 
       (langLabel, langPercent, clusterSize, medianScore)
     }
