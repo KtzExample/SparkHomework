@@ -63,14 +63,16 @@ object TimeUsage {
     * @param columnNames Column names of the DataFrame
     */
   def dfSchema(columnNames: List[String]): StructType =
-    StructType(StructField(columnNames.head, StringType, nullable = false) :: columnNames.tail.map(columnName => StructField(columnName, DoubleType, nullable = true)))
+    StructType(StructField(columnNames.head, StringType, nullable = false) :: columnNames.tail.map(columnName => StructField(columnName, DoubleType, nullable = false)))
 
 
   /** @return An RDD Row compatible with the schema produced by `dfSchema`
     * @param line Raw fields
     */
   def row(line: List[String]): Row =
-    Row.fromSeq(line)
+    Row.fromSeq(
+      line.head :: line.tail.map(_.toDouble)
+    )
 
   /** @return The initial data frame columns partitioned in three groups: primary needs (sleeping, eating, etc.),
     *         work and other (leisure activities)
@@ -98,7 +100,10 @@ object TimeUsage {
     (
       columnNames.filter(col => isStartWith(col, primaryNeedsColumns)).map(col),
       columnNames.filter(col => isStartWith(col, workingColumns)).map(col),
-      columnNames.filter(col => isStartWith(col, otherActivitiesColumns)).map(col)
+      columnNames.filter(col =>
+          isStartWith(col, otherActivitiesColumns) &&
+          !isStartWith(col, primaryNeedsColumns) &&
+          !isStartWith(col, workingColumns)).map(col)
     )
   }
 
